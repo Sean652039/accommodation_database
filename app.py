@@ -74,8 +74,7 @@ def login():
 
 @app.route('/dashboard_tenant')
 def dashboard_tenant():
-    # 假设这里有一些从数据库或其他来源获取的房源信息
-    # 假设这里有一些房源数据
+
     properties = [
         {"id": 1, "title": "Property 1", "rating": 4.5,
          "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
@@ -83,6 +82,7 @@ def dashboard_tenant():
          "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
         # 更多房源信息
     ]
+
     return render_template('dashboard_tenant.html', properties=properties)
 
 properties = [

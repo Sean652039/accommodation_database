@@ -253,6 +253,32 @@
             });
         }
     }
+
+    // 获取从服务器获取的状态和城市数据
+    var stateData = {{ state_name|safe }};
+    var cityData = {{ city_name|safe }};
+
+    // 填充状态下拉菜单
+    var stateSelect = document.getElementById('state');
+    stateData.forEach(function(state) {
+        var option = document.createElement('option');
+        option.value = state.state_name;
+        option.textContent = state.state_name;
+        stateSelect.appendChild(option);
+    });
+
+    // 填充城市下拉菜单
+    var citySelect = document.getElementById('city');
+    cityData.forEach(function(city) {
+        var option = document.createElement('option');
+        option.value = city.city_name;
+        option.textContent = city.city_name;
+        citySelect.appendChild(option);
+    });
+
+</script>
+
+
 </script>
 
 </body>
