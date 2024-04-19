@@ -12,9 +12,6 @@ def generate_captcha_image():
     fnt = ImageFont.truetype(font_path, 40)
     d = ImageDraw.Draw(image)
 
-    # 生成5位数的验证码文本
-    captcha_text = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
-
     # 计算文本宽度
     text_width, _ = d.textsize(captcha_text, font=fnt)
 
