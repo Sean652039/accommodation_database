@@ -146,6 +146,13 @@
 
                 </div>
 
+                <h2>Property Recommendations</h2>
+                <div id = property_details>
+
+                </div>
+
+                </div>
+
                 <script>
                     document.getElementById('state').addEventListener('change', function() {
                         var selectedState = this.value;
@@ -167,6 +174,7 @@
                             // 添加监听器
                             document.getElementById('city').addEventListener('change', function() {
                                 var selectedCity = this.value;
+                                var propety_details = document.getElementById('property_details');
 
                                 fetch(`/property_details`, {
                                     method: 'POST',
@@ -177,6 +185,11 @@
                                         'Content-Type': 'application/x-www-form-urlencoded'
                                     }
                                 })
+                                .then(response => response.json())
+                                .then(data => {
+                                    // 如果成功获取数据，则执行 fetchProperties 函数
+                                   propety_details.innerHTML = data.html_data_property
+                                })
                                 .catch(error => console.error('Error:', error));
                                 });
                             })
@@ -185,7 +198,7 @@
                 </script>
             </div>
 
-<!--            <h2>Property Recommendations</h2>-->
+
 <!--            {% for property in properties %}-->
 <!--            <div class="property">-->
 <!--                <h3>{{ property.property_id }}</h3>-->
@@ -200,17 +213,14 @@
 <!--                    <p>Bathrooms: {{ property.bathrooms_num }}</p>-->
 <!--                    &lt;!&ndash; 预约按钮 &ndash;&gt;-->
 <!--                    <button class="appointment-button" onclick="makeAppointment({{ property.id }}, {{ tenant_id }})">Make Appointment</button>-->
-
 <!--                </div>-->
 <!--            </div>-->
 <!--            {% endfor %}-->
-            <h2>Property Recommendations</h2>
-            <div id="propertiesContainer">
-                <!-- 属性将在此处插入 -->
-            </div>
+
+
 
         </div>
-        <!-- 历史合同面板 -->
+
         <div id="contractsPanel" class="panel">
             <h2>Contracts History</h2>
             <!-- 这里放历史合同信息 -->
@@ -249,44 +259,6 @@
                 t.classList.remove('active');
             }
         });
-    }
-
-    // 当页面加载时执行
-    document.addEventListener('DOMContentLoaded', function () {
-        fetchProperties(); // 获取并显示属性数据
-    });
-
-    // 获取属性数据并更新页面
-    function fetchProperties() {
-        // 发送请求获取属性数据
-        fetch('/dashboard_tenant') // 替换为实际的 API 端点
-            .then(response => response.json())
-            .then(properties => {
-                const propertiesContainer = document.getElementById('propertiesContainer');
-                propertiesContainer.innerHTML = ''; // 清空先前的内容
-                properties.forEach(property => {
-                    // 创建属性元素
-                    const propertyElement = document.createElement('div');
-                    propertyElement.classList.add('property');
-                    propertyElement.innerHTML = `
-                        <h3>${property.property_id}</h3>
-                        <p>${property.description}</p>
-                        <button class="details-button" onclick="showDetails(${property.property_id})">Details</button>
-                        <div id="details${property.property_id}" class="details" style="display: none;">
-                            <p>Property Detail ID: ${property.property_id}</p>
-                            <p>Year Built: ${property.year_built}</p>
-                            <p>Square Feet: ${property.square_feet}</p>
-                            <p>Bedrooms: ${property.bedrooms_num}</p>
-                            <p>Bathrooms: ${property.bathrooms_num}</p>
-                            <button class="appointment-button" onclick="makeAppointment(${property.property_id}, ${tenant_id})">Make Appointment</button>
-                        </div>
-                    `;
-                    propertiesContainer.appendChild(propertyElement);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching properties:', error);
-            });
     }
 
     function showDetails(propertyId) {

@@ -115,9 +115,9 @@ def dashboard_tenant():
             # html_data_city = f'<div id="city-selection">{html_data_city}</div>'
             return jsonify({'html_data_city': html_data_city})
         selected_city = request.form.get('city')
-        if selected_city:
-            properties = get_property(selected_city).json
-            return jsonify({'properties': properties})
+        # if selected_city:
+        #     properties = get_property(selected_city).json
+        #     return jsonify({'properties': properties})
 
 
 
@@ -125,7 +125,27 @@ def dashboard_tenant():
 def property_details():
     selected_city = request.form.get('city')
     properties = get_property(selected_city).json
-    return jsonify({'properties': properties})
+    html_data_property = ''
+    for property in properties:
+        html_data_property += f"""
+        <div class="property">
+            <h3>{property['property_id']}</h3>
+            <p>{property['description']}</p>
+            <button class="details-button" onclick="showDetails({property['property_id']})">Details</button>
+            <!-- 详细信息 -->
+            <div id="details{property['property_id']}" class="details">
+                <p>Property Detail ID: {property['property_id']}</p>
+                <p>Year Built: {property['year_built']}</p>
+                <p>Square Feet: {property['square_feet']}</p>
+                <p>Bedrooms: {property['bedrooms_num']}</p>
+                <p>Bathrooms: {property['bathrooms_num']}</p>
+                <!-- 预约按钮 -->
+                <button class="appointment-button" onclick="makeAppointment({property['property_id']})">Make Appointment</button>
+            </div>
+        </div>
+        """
+    print(html_data_property)
+    return jsonify({'html_data_property': html_data_property})
 
 
 @app.route('/appointment', methods=['POST'])
