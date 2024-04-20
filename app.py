@@ -1,7 +1,11 @@
-from flask import Flask, render_template, request, redirect, session, jsonify
+from flask import Flask, render_template, request, redirect, session, jsonify, render_template_string
+
 from captcha import generate_captcha_image
 import pymysql
+import json
 import io
+
+from read_function import get_state, get_city, get_property
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = 'IS2710'  # 用于加密 session 数据的密钥，请替换成你自己的密钥
@@ -52,80 +56,100 @@ def login():
         # 在这里进行数据库查询，验证用户名和密码是否匹配
         db = connect_db()
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM User WHERE user_id = %s ", (username))
-        user = cursor.fetchone()
+
+        # 首先查询 User 表以获取 user_id
+        cursor.execute("SELECT user_id FROM User WHERE username = %s", (username,))
+        user_result = cursor.fetchone()
+        if user_result:
+            user_id = user_result[0]
+
+            # 然后查询关联表以获取 password_id
+            cursor.execute("SELECT password_id FROM UserUsePassword WHERE user_id = %s", (user_id,))
+            result = cursor.fetchone()
+            if result:
+                password_id = result[0]
+                # 使用 password_id 查询明文密码
+                cursor.execute("SELECT password FROM Password WHERE password_id = %s", (password_id,))
+                password_result = cursor.fetchone()
+                if password_result and password_result[0] == password:
+                    session['logged_in'] = True
+                    session['username'] = username  # 或 session['user_id'] = user_id，取决于你如何管理会话
+                    cursor.close()
+                    db.close()
+                    if user_type == 'tenant':
+                        return redirect('/dashboard_tenant')
+                    else:
+                        return redirect('/dashboard_Landlord')
         cursor.close()
         db.close()
-
-        if user:
-            session['logged_in'] = True
-            session['username'] = username
-            if user_type == 'tenant':
-                return redirect('/dashboard_tenant')
-            else:
-                return redirect('/dashboard_Landlord')
-        else:
-            error_message = 'Invalid username or password'
-            return render_template('login.html', error_message=error_message)
+        error_message = 'Invalid username or password'
+        return render_template('login.html', error_message=error_message)
     else:
         error_message = 'Invalid captcha'
         return render_template('login.html', error_message=error_message)
 
 
-@app.route('/dashboard_tenant')
+@app.route('/dashboard_tenant', methods=['GET', 'POST'])
 def dashboard_tenant():
+    if request.method == 'GET':
+        # 处理GET请求，渲染模板并提供州的下拉菜单
+        states = get_state().json
+        html_data_state = '<label for="state">State:</label><select id="state"><option value="">Select State</option>'
+        for state in states:
+            state_name = state.get('state_name')
+            html_data_state += f'<option value="{state_name}">{state_name}</option>'
+        html_data_state += '</select>'
 
-    properties = [
-        {"id": 1, "title": "Property 1", "rating": 4.5,
-         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
-        {"id": 2, "title": "Property 2", "rating": 4.0,
-         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
-        # 更多房源信息
-    ]
+        return render_template('dashboard_tenant.html', html_data_state=html_data_state)
+    elif request.method == 'POST':
+        # 处理POST请求，获取选定的州并返回城市列表
+        selected_state = request.form.get('state')  # 获取选定的州
+        if selected_state:
+            cities = get_city(selected_state).json  # 从数据库中获取该州的城市列表
+            html_data_city = '<label for="city">City:</label><select id="city"><option value="">Select City</option>'
+            for city in cities:
+                city_name = city.get('city_name')
+                html_data_city += f'<option value="{city_name}">{city_name}</option>'
+            html_data_city += '</select>'
 
-    return render_template('dashboard_tenant.html', properties=properties)
+            # html_data_city = f'<div id="city-selection">{html_data_city}</div>'
+            return jsonify({'html_data_city': html_data_city})
+        selected_city = request.form.get('city')
+        if selected_city:
+            properties = get_property(selected_city).json
+            return jsonify({'properties': properties})
 
-properties = [
-        {"id": 1, "title": "Property 1", "rating": 4.5,
-         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
-        {"id": 2, "title": "Property 2", "rating": 4.0,
-         "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
-        # 更多房源信息
-    ]
 
-@app.route('/property/<int:property_id>')
-def property_details(property_id):
-    # 根据房源ID查找房源信息
-    property = next((p for p in properties if p['id'] == property_id), None)
-    if property:
-        return render_template('property_details.html', property=property)
-    else:
-        return "Property not found", 404
+
+@app.route('/property_details', methods=['POST'])
+def property_details():
+    selected_city = request.form.get('city')
+    properties = get_property(selected_city).json
+    return jsonify({'properties': properties})
 
 
 @app.route('/appointment', methods=['POST'])
 def make_appointment():
-    if request.method == 'POST':
-        appointment_data = request.json
-        # 解析预约信息
-        property_id = appointment_data['property_id']
-        tenant_id = appointment_data['tenant_id']
-        appointment_time = appointment_data['appointment_time']
+    appointment_data = request.json
+    # 解析预约信息
+    property_id = appointment_data['property_id']
+    tenant_id = appointment_data['tenant_id']
+    appointment_time = appointment_data['appointment_time']
 
-        connection = connect_db()
+    connection = connect_db()
+    # 将预约信息插入到数据库中
+    try:
+        with connection.cursor() as cursor:
+            sql = "INSERT INTO appointment (property_id, tenant_id, appointment_time) VALUES (%s, %s, %s)"
+            cursor.execute(sql, (property_id, tenant_id, appointment_time))
+        connection.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        connection.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        connection.close()
 
-        # 将预约信息插入到数据库中
-        try:
-            with connection.cursor() as cursor:
-                sql = "INSERT INTO appointment (property_id, tenant_id, appointment_time) VALUES (%s, %s, %s)"
-                cursor.execute(sql, (property_id, tenant_id, appointment_time))
-            connection.commit()
-            return jsonify({'success': True})
-        except Exception as e:
-            connection.rollback()
-            return jsonify({'success': False, 'error': str(e)})
-        finally:
-            connection.close()
 
 
 @app.route('/dashboard_landlord')

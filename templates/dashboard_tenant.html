@@ -129,47 +129,86 @@
     <div class="container">
         <h1>Tenant Dashboard</h1>
         <!-- 标签部分 -->
+        <!-- 标签部分 -->
         <div class="tabs">
-            <div class="tab active" onclick="togglePanel('propertiesPanel')">Properties</div>
-            <div class="tab" onclick="togglePanel('contractsPanel')">Contracts History</div>
+            <div class="tab active" data-panel="propertiesPanel" onclick="togglePanel(this)">Properties</div>
+            <div class="tab" data-panel="contractsPanel" onclick="togglePanel(this)">Contracts History</div>
         </div>
         <!-- 房源面板 -->
         <div id="propertiesPanel" class="panel active">
             <!-- 下拉按钮 -->
             <div>
-                <label for="state">State:</label>
-                <select id="state">
-                    <option value="state1">State 1</option>
-                    <option value="state2">State 2</option>
-                    <!-- 更多选项 -->
-                </select>
-                <label for="city">City:</label>
-                <select id="city">
-                    <option value="city1">City 1</option>
-                    <option value="city2">City 2</option>
-                    <!-- 更多选项 -->
-                </select>
-            </div>
-            <h2>Property Recommendations</h2>
-            {% for property in properties %}
-            <div class="property">
-                <h3>{{ property.title }}</h3>
-                <p>Rating: {{ property.rating }}</p>
-                <p>{{ property.description }}</p>
-                <button class="details-button" onclick="showDetails({{ property.id }})">Details</button>
-                <!-- 详细信息 -->
-                <div id="details{{ property.id }}" class="details">
-                    <p>Property Detail ID: {{ property.id }}</p>
-                    <p>Year Built: {{ property.year_built }}</p>
-                    <p>Square Feet: {{ property.square_feet }}</p>
-                    <p>Bedrooms: {{ property.bedrooms_num }}</p>
-                    <p>Bathrooms: {{ property.bathrooms_num }}</p>
-                    <!-- 预约按钮 -->
-                    <button class="appointment-button" onclick="makeAppointment({{ property.id }}, {{ tenant_id }})">Make Appointment</button>
+                <div id="state-selection">
+                    {{ html_data_state | safe }}
+                </div>
+
+                <div id="city-selection">
 
                 </div>
+
+                <script>
+                    document.getElementById('state').addEventListener('change', function() {
+                        var selectedState = this.value;
+                        var citySelect = document.getElementById('city-selection');
+                        fetch(`/dashboard_tenant`, {
+                            method: 'POST',
+                            body: new URLSearchParams({
+                                state: selectedState
+                            }),
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            citySelect.innerHTML = data.html_data_city;
+                            // // 获取新插入的city元素
+                            // var cityElement = citySelect.querySelector('#city');
+                            // 添加监听器
+                            document.getElementById('city').addEventListener('change', function() {
+                                var selectedCity = this.value;
+
+                                fetch(`/property_details`, {
+                                    method: 'POST',
+                                    body: new URLSearchParams({
+                                        city: selectedCity
+                                    }),
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                    }
+                                })
+                                .catch(error => console.error('Error:', error));
+                                });
+                            })
+                            .catch(error => console.error('Error:', error));
+                    });
+                </script>
             </div>
-            {% endfor %}
+
+<!--            <h2>Property Recommendations</h2>-->
+<!--            {% for property in properties %}-->
+<!--            <div class="property">-->
+<!--                <h3>{{ property.property_id }}</h3>-->
+<!--                <p>{{ property.description }}</p>-->
+<!--                <button class="details-button" onclick="showDetails({{ property.property_id }})">Details</button>-->
+<!--                &lt;!&ndash; 详细信息 &ndash;&gt;-->
+<!--                <div id="details{{ property.property_id }}" class="details">-->
+<!--                    <p>Property Detail ID: {{ property.property_id }}</p>-->
+<!--                    <p>Year Built: {{ property.year_built }}</p>-->
+<!--                    <p>Square Feet: {{ property.square_feet }}</p>-->
+<!--                    <p>Bedrooms: {{ property.bedrooms_num }}</p>-->
+<!--                    <p>Bathrooms: {{ property.bathrooms_num }}</p>-->
+<!--                    &lt;!&ndash; 预约按钮 &ndash;&gt;-->
+<!--                    <button class="appointment-button" onclick="makeAppointment({{ property.id }}, {{ tenant_id }})">Make Appointment</button>-->
+
+<!--                </div>-->
+<!--            </div>-->
+<!--            {% endfor %}-->
+            <h2>Property Recommendations</h2>
+            <div id="propertiesContainer">
+                <!-- 属性将在此处插入 -->
+            </div>
+
         </div>
         <!-- 历史合同面板 -->
         <div id="contractsPanel" class="panel">
@@ -189,7 +228,7 @@
     </div>
 
     <script>
-    function togglePanel(panelId) {
+    function togglePanel(tab) {
         // 隐藏所有面板
         var panels = document.querySelectorAll('.panel');
         panels.forEach(function(panel) {
@@ -197,18 +236,57 @@
         });
 
         // 激活目标面板
+        var panelId = tab.getAttribute('data-panel');
         var targetPanel = document.getElementById(panelId);
         targetPanel.classList.add('active');
 
         // 切换标签状态
         var tabs = document.querySelectorAll('.tab');
-        tabs.forEach(function(tab) {
-            if (tab.getAttribute('onclick').includes(panelId)) {
-                tab.classList.add('active');
+        tabs.forEach(function(t) {
+            if (t === tab) {
+                t.classList.add('active');
             } else {
-                tab.classList.remove('active');
+                t.classList.remove('active');
             }
         });
+    }
+
+    // 当页面加载时执行
+    document.addEventListener('DOMContentLoaded', function () {
+        fetchProperties(); // 获取并显示属性数据
+    });
+
+    // 获取属性数据并更新页面
+    function fetchProperties() {
+        // 发送请求获取属性数据
+        fetch('/dashboard_tenant') // 替换为实际的 API 端点
+            .then(response => response.json())
+            .then(properties => {
+                const propertiesContainer = document.getElementById('propertiesContainer');
+                propertiesContainer.innerHTML = ''; // 清空先前的内容
+                properties.forEach(property => {
+                    // 创建属性元素
+                    const propertyElement = document.createElement('div');
+                    propertyElement.classList.add('property');
+                    propertyElement.innerHTML = `
+                        <h3>${property.property_id}</h3>
+                        <p>${property.description}</p>
+                        <button class="details-button" onclick="showDetails(${property.property_id})">Details</button>
+                        <div id="details${property.property_id}" class="details" style="display: none;">
+                            <p>Property Detail ID: ${property.property_id}</p>
+                            <p>Year Built: ${property.year_built}</p>
+                            <p>Square Feet: ${property.square_feet}</p>
+                            <p>Bedrooms: ${property.bedrooms_num}</p>
+                            <p>Bathrooms: ${property.bathrooms_num}</p>
+                            <button class="appointment-button" onclick="makeAppointment(${property.property_id}, ${tenant_id})">Make Appointment</button>
+                        </div>
+                    `;
+                    propertiesContainer.appendChild(propertyElement);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching properties:', error);
+            });
     }
 
     function showDetails(propertyId) {
@@ -253,31 +331,6 @@
             });
         }
     }
-
-    // 获取从服务器获取的状态和城市数据
-    var stateData = {{ state_name|safe }};
-    var cityData = {{ city_name|safe }};
-
-    // 填充状态下拉菜单
-    var stateSelect = document.getElementById('state');
-    stateData.forEach(function(state) {
-        var option = document.createElement('option');
-        option.value = state.state_name;
-        option.textContent = state.state_name;
-        stateSelect.appendChild(option);
-    });
-
-    // 填充城市下拉菜单
-    var citySelect = document.getElementById('city');
-    cityData.forEach(function(city) {
-        var option = document.createElement('option');
-        option.value = city.city_name;
-        option.textContent = city.city_name;
-        citySelect.appendChild(option);
-    });
-
-</script>
-
 
 </script>
 
