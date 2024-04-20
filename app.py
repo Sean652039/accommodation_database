@@ -5,7 +5,7 @@ import pymysql
 import json
 import io
 
-from read_function import get_state, get_city, get_property
+from read_function import get_state, get_city, get_property, insert_appointment
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = 'IS2710'  # 用于加密 session 数据的密钥，请替换成你自己的密钥
@@ -144,32 +144,20 @@ def property_details():
             </div>
         </div>
         """
-    print(html_data_property)
     return jsonify({'html_data_property': html_data_property})
 
 
 @app.route('/appointment', methods=['POST'])
 def make_appointment():
-    appointment_data = request.json
+
     # 解析预约信息
-    property_id = appointment_data['property_id']
-    tenant_id = appointment_data['tenant_id']
-    appointment_time = appointment_data['appointment_time']
+    property_id = request.json.get('property_id')
+    appointment_name = request.json.get('tenant_name')
+    appointment_date = request.json.get('appointment_time')
 
-    connection = connect_db()
-    # 将预约信息插入到数据库中
-    try:
-        with connection.cursor() as cursor:
-            sql = "INSERT INTO appointment (property_id, tenant_id, appointment_time) VALUES (%s, %s, %s)"
-            cursor.execute(sql, (property_id, tenant_id, appointment_time))
-        connection.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        connection.rollback()
-        return jsonify({'success': False, 'error': str(e)})
-    finally:
-        connection.close()
+    result = insert_appointment(property_id, appointment_name, appointment_date)
 
+    return result
 
 
 @app.route('/dashboard_landlord')

@@ -37,3 +37,28 @@ def get_property(city):
     db.close()
 
     return jsonify(json.loads(properties.to_json(orient='records')))
+
+
+def insert_appointment(property_id, appointment_name, appointment_date):
+    connection = connect_db()
+    # 将预约信息插入到数据库中
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT fk_user_id FROM UserOwnProperty WHERE fk_property_id = %s", (property_id,))
+            user_result = cursor.fetchone()
+            if user_result:
+                landlord_id = user_result[0]
+                cursor.execute("SELECT user_id FROM User WHERE username = %s", (appointment_name,))
+                user_result_tenant = cursor.fetchone()
+                if user_result_tenant:
+                    tenant_id = user_result_tenant[0]
+                    print(tenant_id)
+            sql = "INSERT INTO Appointments (property_id, initiator_user_id, receiver_user_id, appointment_time, status) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(sql, (property_id, tenant_id, landlord_id, appointment_date, 'scheduled'))
+        connection.commit()
+        connection.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        connection.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
