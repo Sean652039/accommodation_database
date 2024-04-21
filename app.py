@@ -1,14 +1,13 @@
-from flask import Flask, render_template, request, redirect, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, session, jsonify, flash, url_for
 from captcha import generate_captcha_image
-import pymysql
 import io
 
 from API import (check_login_api, get_state_api, get_city_api, get_property_api, insert_appointment_api,
-                 get_contracts_api, publish_property_api, register_api)
+                 get_contracts_api, publish_property_api, register_api, transaction_sign_contract_api)
 
 
 app = Flask(__name__, template_folder="templates")
-app.secret_key = 'IS2710'  # 用于加密 session 数据的密钥，请替换成你自己的密钥
+app.secret_key = 'IS2710'
 
 
 @app.route('/')
@@ -18,10 +17,10 @@ def home():
 
 @app.route('/captcha')
 def captcha():
-    # 使用上述函数生成验证码图片
+    # Generate a CAPTCHA image using the above function
     image, captcha_text = generate_captcha_image()
 
-    # 将验证码文本存储到session，以便之后进行验证
+    # Store CAPTCHA text to session for later validation
     session['captcha'] = captcha_text
 
     buf = io.BytesIO()
@@ -45,7 +44,7 @@ def login():
         password_result = check_login_api(username).json['password']
         if password_result and password_result == password:
             session['logged_in'] = True
-            session['username'] = username  # 或 session['user_id'] = user_id，取决于你如何管理会话
+            session['username'] = username  # or session['user_id'] = user_id depending on how you manage the session
 
             if user_type == 'tenant':
                 return redirect('/dashboard_tenant')
@@ -62,7 +61,7 @@ def login():
 @app.route('/dashboard_tenant', methods=['GET', 'POST'])
 def dashboard_tenant():
     if request.method == 'GET':
-        # 处理GET请求，渲染模板并提供州的下拉菜单
+        # Handle GET requests, render templates and provide state dropdowns
         states = get_state_api().json
         html_data_state = '<label for="state">State:</label><select id="state"><option value="">Select State</option>'
         for state in states:
@@ -72,10 +71,10 @@ def dashboard_tenant():
 
         return render_template('dashboard_tenant.html', html_data_state=html_data_state)
     elif request.method == 'POST':
-        # 处理POST请求，获取选定的州并返回城市列表
-        selected_state = request.form.get('state')  # 获取选定的州
+        # Process the POST request, get the selected state and return a list of cities
+        selected_state = request.form.get('state')  # Get selected states
         if selected_state:
-            cities = get_city_api(selected_state).json  # 从数据库中获取该州的城市列表
+            cities = get_city_api(selected_state).json  # Get a list of cities in the state from the database
             html_data_city = '<label for="city">City:</label><select id="city"><option value="">Select City</option>'
             for city in cities:
                 city_name = city.get('city_name')
@@ -98,15 +97,16 @@ def property_details():
             <h3>{property['property_id']}</h3>
             <p>{property['description']}</p>
             <button class="details-button" onclick="showDetails({property['property_id']})">Details</button>
-            <!-- 详细信息 -->
+            <!-- Detailed information -->
             <div id="details{property['property_id']}" class="details">
                 <p>Property Detail ID: {property['property_id']}</p>
                 <p>Year Built: {property['year_built']}</p>
                 <p>Square Feet: {property['square_feet']}</p>
                 <p>Bedrooms: {property['bedrooms_num']}</p>
                 <p>Bathrooms: {property['bathrooms_num']}</p>
-                <!-- 预约按钮 -->
+                <!--  Appointment button -->
                 <button class="appointment-button" onclick="makeAppointment({property['property_id']})">Make Appointment</button>
+                <button class="contract-button" onclick="signContract({property['property_id']})">Sign Contract</button>
             </div>
         </div>
         """
@@ -115,8 +115,7 @@ def property_details():
 
 @app.route('/appointment', methods=['POST'])
 def make_appointment():
-
-    # 解析预约信息
+    # Parsing reservation information
     property_id = request.json.get('property_id')
     appointment_name = request.json.get('tenant_name')
     appointment_date = request.json.get('appointment_time')
@@ -126,19 +125,31 @@ def make_appointment():
     return result
 
 
+@app.route('/contract', methods=['POST'])
+def execute_contract():
+    property_id = request.json.get('property_id')
+    tenant_name = request.json.get('tenant_name')
+    contract_price = request.json.get('price')
+    payment_amount = contract_price
+
+    response = transaction_sign_contract_api(property_id, tenant_name, contract_price, payment_amount)
+
+    return response
+
+
 @app.route('/dashboard_landlord', methods=['GET'])
 def dashboard_landlord():
     if request.method == 'GET':
-        # 从数据库获取所有合同信息
+        # :: Obtain information on all contracts from the database
         contracts = get_contracts_api()
 
-        # 生成合同信息的 HTML 内容
+        # Generate HTML content for contract information
         html_data_contracts = '<div class="contracts-listing">'
         for contract in contracts:
             html_data_contracts += f'<div class="contract-item"><p>Signing Date: {contract["signing_date"]}</p><p>Contract Price: {contract["contract_price"]}</p></div>'
         html_data_contracts += '</div>'
 
-        # 向模板传递合同数据
+        # Contract data passed to templates
         return render_template('dashboard_landlord.html', html_data_contracts=html_data_contracts)
 
 

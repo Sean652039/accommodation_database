@@ -5,28 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tenant Dashboard</title>
     <style>
-        /* 背景颜色 */
+
         body {
-            background-color: #eaf6ff; /* 浅蓝色 */
+            background-color: #eaf6ff;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
         }
-        /* 容器样式 */
+
         .container {
             max-width: 800px;
-            margin: 50px auto; /* 上边距为50px，左右居中 */
+            margin: 50px auto;
             padding: 20px;
             background-color: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        /* 标题样式 */
+
         h1 {
             text-align: center;
             color: #333;
         }
-        /* 标签样式 */
+
         .tabs {
             margin-bottom: 20px;
         }
@@ -40,7 +40,7 @@
         .tab.active {
             background-color: #f9f9f9;
         }
-        /* 房源和历史合同面板 */
+
         .panel {
             display: none;
             padding: 20px;
@@ -50,15 +50,15 @@
         .panel.active {
             display: block;
         }
-        /* 房源样式 */
+
         .property {
             border: 1px solid #ccc;
             padding: 20px;
             margin-bottom: 30px;
             background-color: #f9f9f9;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
-            position: relative; /* 设置为相对定位，为了后续绝对定位按钮 */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
         .property h3 {
             margin-top: 0;
@@ -66,8 +66,8 @@
         .details-button {
             position: absolute;
             top: 10px;
-            right: 10px; /* 调整按钮位置 */
-            background-color: #4CAF50; /* 绿色 */
+            right: 10px;
+            background-color: #4CAF50;
             border: none;
             color: white;
             padding: 10px 20px;
@@ -78,7 +78,7 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        /* 详细信息样式 */
+
         .details {
             display: none;
             margin-top: 20px;
@@ -92,7 +92,7 @@
         }
         .appointment-button {
             margin-top: 20px;
-            background-color: #ff0000; /* 红色 */
+            background-color: #ff0000;
             border: none;
             color: white;
             padding: 10px 20px;
@@ -103,9 +103,23 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        /* 模拟弹窗样式 */
+        .contract-button {
+            margin-top: 20px;
+            margin-left: 20px;
+            background-color: #00008B;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
         .modal {
-            display: none; /* 默认隐藏 */
+            display: none;
             position: fixed;
             z-index: 1;
             left: 0;
@@ -113,7 +127,7 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0,0,0,0.4); /* 半透明黑色背景 */
+            background-color: rgba(0,0,0,0.4);
         }
         .modal-content {
             background-color: #fefefe;
@@ -128,8 +142,7 @@
 <body>
     <div class="container">
         <h1>Tenant Dashboard</h1>
-        <!-- 标签部分 -->
-        <!-- 标签部分 -->
+
 
         <div id="logoutButton" style="text-align: right; margin-bottom: 10px;">
         <button onclick="logout()" style="background-color: #ff0000; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Logout</button>
@@ -139,9 +152,9 @@
             <div class="tab active" data-panel="propertiesPanel" onclick="togglePanel(this)">Properties</div>
             <div class="tab" data-panel="contractsPanel" onclick="togglePanel(this)">Contracts History</div>
         </div>
-        <!-- 房源面板 -->
+        <!-- property listing panel -->
         <div id="propertiesPanel" class="panel active">
-            <!-- 下拉按钮 -->
+            <!-- drop-down button -->
             <div>
                 <div id="state-selection">
                     {{ html_data_state | safe }}
@@ -174,9 +187,9 @@
                         .then(response => response.json())
                         .then(data => {
                             citySelect.innerHTML = data.html_data_city;
-                            // // 获取新插入的city元素
+                            // // Get the newly inserted city element
                             // var cityElement = citySelect.querySelector('#city');
-                            // 添加监听器
+                            // Add the listener
                             document.getElementById('city').addEventListener('change', function() {
                                 var selectedCity = this.value;
                                 var propety_details = document.getElementById('property_details');
@@ -192,7 +205,7 @@
                                 })
                                 .then(response => response.json())
                                 .then(data => {
-                                    // 如果成功获取数据，则执行 fetchProperties 函数
+                                    // If it succeeds, execute the fetchProperties function.
                                    propety_details.innerHTML = data.html_data_property
                                 })
                                 .catch(error => console.error('Error:', error));
@@ -205,14 +218,14 @@
 
         <div id="contractsPanel" class="panel">
             <h2>Contracts History</h2>
-            <!-- 这里放历史合同信息 -->
+            <!-- Put historical contract information here -->
             <p>Contract 1</p>
             <p>Contract 2</p>
-            <!-- 更多历史合同信息 -->
+
         </div>
     </div>
 
-    <!-- 模拟弹窗 -->
+    <!-- Simulate pop-up windows -->
     <div id="myModal" class="modal">
         <div class="modal-content">
             <p>Appointment successfully made!</p>
@@ -221,18 +234,18 @@
 
     <script>
     function togglePanel(tab) {
-        // 隐藏所有面板
+        // Hide all panels
         var panels = document.querySelectorAll('.panel');
         panels.forEach(function(panel) {
             panel.classList.remove('active');
         });
 
-        // 激活目标面板
+        // Activate the target panel
         var panelId = tab.getAttribute('data-panel');
         var targetPanel = document.getElementById(panelId);
         targetPanel.classList.add('active');
 
-        // 切换标签状态
+        // Toggle label state
         var tabs = document.querySelectorAll('.tab');
         tabs.forEach(function(t) {
             if (t === tab) {
@@ -253,7 +266,7 @@
         modal.style.display = 'block';
         setTimeout(function() {
             modal.style.display = 'none';
-        }, 3000); // 3秒后自动关闭模态框
+        }, 3000); // Automatically close the modal box after 3 seconds
     }
 
     function makeAppointment(propertyId) {
@@ -289,9 +302,43 @@
         }
     }
 
-    // 注销函数
+    function signContract(propertyId) {
+        var price = prompt("Please enter the price:");
+        if (price != null && price != "") {
+            var userName = prompt("Please sign your name:");
+            if (userName != null && userName != ""){
+                var data = {
+                    property_id: propertyId,
+                    tenant_name: userName,
+                    price: price
+                };
+
+                fetch('/contract', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Contract successfully executed!");
+                    } else {
+                        alert("Failed to execute contract: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+    }
+
+
+    // Logout function
     function logout() {
-        // 这里放置注销操作的代码，例如重定向到注销路由
+        // This is where you put the code for logout actions, such as redirecting to the logout route.
         window.location.href = '/logout';
     }
 

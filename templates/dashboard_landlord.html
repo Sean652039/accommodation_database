@@ -96,15 +96,15 @@
         </div>
         <div id="contractsPanel" class="panel">
             <h2>Contracts History</h2>
-            <!-- 动态加载合同历史 -->
+            <!-- Dynamically loaded contract history -->
             {{ html_data_contracts|safe }}
         </div>
         <div id="managementPanel" class="panel">
             <h2>Manage Properties</h2>
-            <div id="messageDisplay" class="alert" style="display: none;"></div> <!-- 消息显示区域 -->
+            <div id="messageDisplay" class="alert" style="display: none;"></div> <!-- Message Display Area -->
             <div class="management">
                 <h3>Publish New Property</h3>
-                <!-- 发布房源表单 -->
+                <!-- Post Listing Form -->
                 <form method="post" action="/publish_property">
                     <input type="text" name="description" placeholder="Description" required>
                     <input type="text" name="city" placeholder="City" required>
@@ -135,7 +135,7 @@ function togglePanel(tab) {
     });
 }
 
-// 处理表单提交
+// Processing form submissions
 document.getElementById('publishForm').addEventListener('submit', function(event) {
     event.preventDefault();
     var form = this;
@@ -147,11 +147,11 @@ document.getElementById('publishForm').addEventListener('submit', function(event
     })
     .then(response => response.json())
     .then(data => {
-        // 显示消息
+        // Display the message
         var messageDisplay = document.getElementById('messageDisplay');
-        messageDisplay.textContent = data.message; // 从服务器响应设置消息文本
-        messageDisplay.style.display = 'block'; // 显示消息区域
-        messageDisplay.className = data.success ? 'alert alert-success' : 'alert alert-danger'; // 设置样式
+        messageDisplay.textContent = data.message; // Set the message text from the server response
+        messageDisplay.style.display = 'block'; // Display the message area
+        messageDisplay.className = data.success ? 'alert alert-success' : 'alert alert-danger'; // Setting styles
     })
     .catch(error => console.error('Error:', error));
 });
