@@ -1,11 +1,11 @@
-from flask import Flask, render_template, request, redirect, session, jsonify, render_template_string
-
+from flask import Flask, render_template, request, redirect, session, jsonify, render_template_string,flash
 from captcha import generate_captcha_image
 import pymysql
 import json
 import io
 
-from read_function import get_state, get_city, get_property, insert_appointment
+from read_function import get_state, get_city, get_property, insert_appointment,get_contracts,connect_db, check_or_insert, connect_tables
+
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = 'IS2710'  # 用于加密 session 数据的密钥，请替换成你自己的密钥
@@ -160,9 +160,58 @@ def make_appointment():
     return result
 
 
-@app.route('/dashboard_landlord')
+@app.route('/dashboard_landlord', methods=['GET'])
 def dashboard_landlord():
-    return "这是房东仪表板"
+    if request.method == 'GET':
+        # 从数据库获取所有合同信息
+        contracts = get_contracts()
+
+        # 生成合同信息的 HTML 内容
+        html_data_contracts = '<div class="contracts-listing">'
+        for contract in contracts:
+            html_data_contracts += f'<div class="contract-item"><p>Signing Date: {contract["signing_date"]}</p><p>Contract Price: {contract["contract_price"]}</p></div>'
+        html_data_contracts += '</div>'
+
+        # 向模板传递合同数据
+        return render_template('dashboard_landlord.html', html_data_contracts=html_data_contracts)
+
+
+@app.route('/publish_property', methods=['POST'])
+def publish_property():
+    description = request.form['description']
+    city = request.form['city']
+    state = request.form['state']
+    address = request.form['address']
+
+    db = connect_db()
+    try:
+        with db.cursor() as cursor:
+            # Check or insert state and city with the correct id column names
+            state_id = check_or_insert(cursor, "State", "state_name", state, "state_id")
+            city_id = check_or_insert(cursor, "City", "city_name", city, "city_id")
+
+            # Insert into Address table
+            cursor.execute("INSERT INTO Address (line1) VALUES (%s)", (address,))
+            address_id = cursor.lastrowid
+
+            # Insert into Property table
+            cursor.execute("INSERT INTO Property (description) VALUES (%s)", (description,))
+            property_id = cursor.lastrowid
+
+            # Establish relationships through foreign keys
+            connect_tables(cursor, "CityLocateState", "fk_city_id", "fk_state_id", city_id, state_id)
+            connect_tables(cursor, "PropertyLocateAddress", "fk_property_id", "fk_address_id", property_id, address_id)
+            connect_tables(cursor, "AddressLocateCity", "fk_address_id", "fk_city_id", address_id, city_id)
+
+            db.commit()
+            flash('Publish Success', 'success')  # Flash a success message
+            return redirect(render_template('dashboard_landlord.html'))  # Redirect to the form page
+    except Exception as e:
+        db.rollback()
+        flash(str(e), 'error')  # Flash an error message
+    finally:
+        db.close()
+    return render_template('dashboard_landlord.html')
 
 
 @app.route('/logout')

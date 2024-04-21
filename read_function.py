@@ -62,3 +62,28 @@ def insert_appointment(property_id, appointment_name, appointment_date):
         connection.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
+def get_contracts():
+    db = connect_db()
+    try:
+        # 只查询 signing_date 和 contract_price 两列
+        query = "SELECT signing_date, contract_price FROM Contract;"
+        contracts_data = pd.read_sql(query, con=db)
+        return contracts_data.to_dict(orient='records')  # 将结果转换为字典列表
+    finally:
+        db.close()
+
+def check_or_insert(cursor, table, column, value, id_column_name):
+    """Check if the value exists in the table; if not, insert it and return its id."""
+    query = f"SELECT {id_column_name} FROM {table} WHERE {column} = %s"
+    cursor.execute(query, (value,))
+    result = cursor.fetchone()
+    if result:
+        return result[id_column_name]
+    else:
+        cursor.execute(f"INSERT INTO {table} ({column}) VALUES (%s)", (value,))
+        cursor.connection.commit()  # Ensure the insert is committed if needed
+        return cursor.lastrowid
+
+def connect_tables(cursor, table, column1, column2, value1, value2):
+    """Connect entries in junction tables."""
+    cursor.execute(f"INSERT INTO {table} ({column1}, {column2}) VALUES (%s, %s)", (value1, value2))

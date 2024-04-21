@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landlord Dashboard</title>
+    <style>
+        body {
+            background-color: #eaf6ff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .tabs {
+            margin-bottom: 20px;
+        }
+        .tab {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #ccc;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: #f9f9f9;
+        }
+        .panel {
+            display: none;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 0 0 5px 5px;
+        }
+        .panel.active {
+            display: block;
+        }
+        .management {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 30px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .management h3 {
+            margin-top: 0;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+            .contracts-listing {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    .contract-item {
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease-in-out;
+    }
+    .contract-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Landlord Dashboard</h1>
+        <div class="tabs">
+            <div class="tab" data-panel="contractsPanel" onclick="togglePanel(this)">Contracts History</div>
+            <div class="tab" data-panel="managementPanel" onclick="togglePanel(this)">Property Management</div>
+        </div>
+        <div id="contractsPanel" class="panel">
+            <h2>Contracts History</h2>
+            <!-- 动态加载合同历史 -->
+            {{ html_data_contracts|safe }}
+        </div>
+        <div id="managementPanel" class="panel">
+            <h2>Manage Properties</h2>
+            <div id="messageDisplay" class="alert" style="display: none;"></div> <!-- 消息显示区域 -->
+            <div class="management">
+                <h3>Publish New Property</h3>
+                <!-- 发布房源表单 -->
+                <form method="post" action="/publish_property">
+                    <input type="text" name="description" placeholder="Description" required>
+                    <input type="text" name="city" placeholder="City" required>
+                    <input type="text" name="state" placeholder="State" required>
+                    <input type="text" name="address" placeholder="Address" required>
+                    <button type="submit">Publish Property</button>
+                </form>
+            </div>
+        </div>
+    </div>
+<script>
+function togglePanel(tab) {
+    var panels = document.querySelectorAll('.panel');
+    panels.forEach(function(panel) {
+        panel.classList.remove('active');
+    });
+    var panelId = tab.getAttribute('data-panel');
+    var targetPanel = document.getElementById(panelId);
+    targetPanel.classList.add('active');
+
+    var tabs = document.querySelectorAll('.tab');
+    tabs.forEach(function(t) {
+        if (t === tab) {
+            t.classList.add('active');
+        } else {
+            t.classList.remove('active');
+        }
+    });
+}
+
+// 处理表单提交
+document.getElementById('publishForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    var form = this;
+    var data = new FormData(form);
+
+    fetch(form.action, {
+        method: form.method,
+        body: data,
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 显示消息
+        var messageDisplay = document.getElementById('messageDisplay');
+        messageDisplay.textContent = data.message; // 从服务器响应设置消息文本
+        messageDisplay.style.display = 'block'; // 显示消息区域
+        messageDisplay.className = data.success ? 'alert alert-success' : 'alert alert-danger'; // 设置样式
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>
+
+</body>
+</html>
