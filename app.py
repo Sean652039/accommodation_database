@@ -219,6 +219,57 @@ def logout():
     session.clear()
     return redirect('/')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'GET':
+        return render_template('register.html')
+    elif request.method == 'POST':
+        # Get user input from the registration form
+        username = request.form['username']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        user_type = request.form['user_type']  # Get the selected user type
+        # Add more fields as needed
+
+        # Check if the username already exists
+        db = connect_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM User WHERE username = %s", (username,))
+        existing_user = cursor.fetchone()
+        cursor.close()
+        db.close()
+
+        if existing_user:
+            error_message = "Username already exists. Please enter a different username."
+            return render_template('register.html', error_message=error_message)
+        elif password != confirm_password:
+            error_message = "The passwords entered twice are inconsistent."
+            return render_template('register.html', error_message=error_message)
+        elif password == confirm_password:
+            # Insert the new user into the database
+            db = connect_db()
+            cursor = db.cursor()
+            try:
+                cursor.execute("INSERT INTO User (username) VALUES (%s)", (username, ))
+                user_id = cursor.lastrowid
+                cursor.execute("INSERT INTO UserIsUserType (user_id, type_id) VALUES (%s, %s)",
+                               (user_id, 1 if user_type == 'tenant' else 2))
+                cursor.execute("INSERT INTO Password (password) VALUES (%s)", (password,))
+                password_id = cursor.lastrowid
+                cursor.execute("INSERT INTO UserUsePassword (user_id, password_id) VALUES (%s, %s)",
+                               (user_id, password_id))
+                db.commit()
+                cursor.close()
+                db.close()
+                flash('Registration successful! You can now login.')
+                # Redirect to login page after successful registration
+                return redirect('/')
+
+            except Exception as e:
+                # Handle registration errors
+                error_message = "Registration failed. Please try again."
+                return render_template('register.html', error_message=error_message)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
