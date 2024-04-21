@@ -3,46 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>register</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.4/semantic.min.css">
+    <title>Register</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff; /* 浅蓝色 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .register-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .register-container h1 {
+            margin-bottom: 20px;
+        }
+        .register-container input,
+        .register-container select {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .register-container button {
+            width: 100%;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .register-container button:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: red;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-    <main>
-        <div class="ui container" style="max-width: 30em !important;">
-            <div class="ui container">
-                <div class="ui middle aligned center aligned grid">
-                    <div class="column">
-                        <h2 class="ui teal image header">
-                            <div class="content">
-                                Register
-                            </div>
-                        </h2>
-                        <!-- specify the python function used when submit the form-->
-                        <form class="ui large form"  method="post" action="{{url_for('register')}}">
-                            <div class="ui  segment">
-                                <div class="field">
-                                    <div class="ui left icon input">
-                                        <i class="user icon"></i>
-                                        <input type="text" name="username" placeholder="username">
-                                    </div>
-                                </div>
-                                <div class="field">
-                                    <div class="ui left icon input">
-                                        <i class="lock icon"></i>
-                                        <input type="password" name="password" placeholder="password">
-                                    </div>
-                                </div>
-                                <button class="ui fluid large teal submit button">Register</button>
-                            </div>
+    <div class="register-container">
+        <h1>Register</h1>
+        {% if error_message %}
+            <script>
+                alert("{{ error_message }}");
+            </script>
+        {% endif %}
+        <form action="/register" method="POST">
 
-                        </form>
-                    </div>
-                </div>
-            </div>
+            <label for="user_type">User Type:</label><br>
+            <select id="user_type" name="user_type">
+                <option value="landlord">Landlord</option>
+                <option value="tenant">Tenant</option>
+            </select><br><br>
+
+            <input type="text" name="username" placeholder="Username" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required><br>
+
+            <button type="submit">Register</button>
+        </form>
+        <div class="login-link">
+            <p>Already have an account? <a href="/login">Login</a></p>
         </div>
-    </main>
-
-
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.2/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.4/semantic.min.js"></script>
+    </div>
 </body>
+</html>
