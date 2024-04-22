@@ -74,3 +74,29 @@
 - User and Property Details View joins the User, Property, and PropertyDetail tables to provide a consolidated details view of the properties associated with a user. This view makes it more efficient to display details of all related properties in the user's personal interface.
 -  Property and Market Listings View connects the Property and MarketListings tables to display the market listing information for a property, providing a quick overview of the property listing information.
 - PropertyInfo joins several tables to consolidate details about properties and their locations. This view integrates data from the Property, PropertyLocateAddress, Address, AddressLocateCity, City, and PropertyDetail tables. It facilitates the retrieval of comprehensive information about properties, including their descriptions, year built, square footage, number of bedrooms and bathrooms, as well as the associated city name. By joining these tables, the view offers a consolidated perspective on property details, streamlining the process of accessing essential property information. This view could be particularly useful for tasks such as property management, analysis, or reporting where a comprehensive overview of property details is required.
+
+#### Index
+
+To optimize the performance of the property leasing system, we've created a series of indexes based on the application's usage patterns. 
+
+- indexes have been established on primary key columns to expedite access to core tables such as Property, User, Appointments, Contract, and Review. This facilitates swift retrieval of specific row data within these tables, enhancing query efficiency. 
+- we've crafted indexes on foreign key columns frequently used in join operations, thus accelerating join processes and improving query efficiency. For instance, when linking Contract and Review tables, indexes aid in swiftly locating associations between contracts and corresponding properties or users. 
+- indexes have been set on columns frequently utilized in WHERE clauses, like appointment times and contract IDs, to expedite related query operations, resulting in quicker system responsiveness and smoother user experiences.
+
+#### Demo
+
+- Login 
+
+<img src="https://cdn.jsdelivr.net/gh/Sean652039/pic_bed@main/uPic/image-20240422185301245.png" alt="image-20240422185301245" style="zoom:50%;" />
+
+- Register
+
+<img src="https://cdn.jsdelivr.net/gh/Sean652039/pic_bed@main/uPic/image-20240422185422122.png" alt="image-20240422185422122" style="zoom:50%;" />
+
+- Tenant Dashboard
+
+![image-20240422185331372](https://cdn.jsdelivr.net/gh/Sean652039/pic_bed@main/uPic/image-20240422185331372.png)
+
+- Landlord Dashboard
+
+![image-20240422185511037](https://cdn.jsdelivr.net/gh/Sean652039/pic_bed@main/uPic/image-20240422185511037.png)
